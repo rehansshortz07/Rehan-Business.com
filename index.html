@@ -9,216 +9,280 @@
 
 <link rel="stylesheet" href="style.css">
 
-
+<!-- Firebase Import Map for ES Modules -->
+<script type="importmap">
+  {
+    "imports": {
+      "firebase/app": "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js",
+      "firebase/auth": "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js",
+      "firebase/analytics": "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js",
+      "firebase/firestore": "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js"
+    }
+  }
+</script>
 </head>
 <body>
 
-<div class="app">
-  <!-- SIDEBAR -->
-  <aside class="sidebar">
-    <div class="brand">
+  <!-- 1. AUTH SCREEN (Shown when logged out) -->
+  <div id="authContainer" class="auth-card">
+    <div class="brand" style="justify-content: center; margin-bottom: 16px;">
       <div class="brand-mark">M</div>
-      <div>
-        <div class="brand-name">MedLedger</div>
-        <div class="brand-sub">Health Record System</div>
-      </div>
+      <div class="brand-name" style="color: var(--ink); font-size: 20px;">MedLedger</div>
     </div>
 
-    <nav class="nav">
-      <div class="nav-label">Overview</div>
-      <button class="nav-item active" data-target="dashboard"><span class="ic">◈</span> Dashboard</button>
 
-      <div class="nav-label">Records</div>
-      <button class="nav-item" data-target="vault"><span class="ic">📁</span> Medical Vault</button>
-      <button class="nav-item" data-target="timeline"><span class="ic">🕐</span> Timeline</button>
-      <button class="nav-item" data-target="scanner"><span class="ic">🤖</span> AI Document Scanner</button>
+  
 
-      <div class="nav-label">Care</div>
-      <button class="nav-item" data-target="tracker"><span class="ic">💊</span> Health Tracker</button>
-      <button class="nav-item" data-target="reminders"><span class="ic">🔔</span> Reminders</button>
-
-      <div class="nav-label">Access</div>
-      <button class="nav-item" data-target="sharing"><span class="ic">🔐</span> Doctor Sharing</button>
-      <button class="nav-item" data-target="summary"><span class="ic">📊</span> AI Health Summary</button>
-      <button class="nav-item" data-target="learning"><span class="ic">🎓</span> Learning Hub</button>
-    </nav>
-
-    <div class="sidebar-foot">
-      <div class="demo-flag">⚠ Hackathon demo — all patient data shown is fictional dummy data.</div>
+    <div class="tab-buttons">
+      <button id="tabLoginBtn" class="active" type="button">Sign In</button>
+      <button id="tabRegisterBtn" type="button">Register</button>
     </div>
-  </aside>
 
-  <!-- MAIN -->
-  <main class="main">
-
-    <div class="topbar">
-      <div>
-        <h1 class="page-title" id="pageTitle">Dashboard</h1>
-        <div class="page-sub" id="pageSub">Your medical history, organized in one place.</div>
+    <!-- Sign In Form -->
+    <form id="loginForm">
+      <div class="form-group">
+        <label for="loginEmail">Email Address</label>
+        <input type="email" id="loginEmail" autocomplete="username" placeholder="name@example.com" required>
       </div>
-      <div class="patient-chip">
-        <div class="avatar">AR</div>
+      <div class="form-group">
+        <label for="loginPassword">Password</label>
+        <input type="password" id="loginPassword" autocomplete="current-password" placeholder="••••••••" required>
+      </div>
+      <div id="loginError" style="color: var(--danger); font-size: 12px; margin-bottom: 10px; line-height: 1.4;"></div>
+      <button type="submit" class="btn-primary" id="loginSubmitBtn">Sign In to MedLedger</button>
+    </form>
+
+    <!-- Register Form (Hidden by default) -->
+    <form id="registerForm" class="hidden">
+      <div class="form-group">
+        <label for="regName">Full Name</label>
+        <input type="text" id="regName" autocomplete="name" placeholder="e.g. Ananya Rao" required>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="regBlood">Blood Group</label>
+          <select id="regBlood">
+            <option value="O+">O+</option>
+            <option value="O-">O-</option>
+            <option value="A+">A+</option>
+            <option value="A-">A-</option>
+            <option value="B+">B+</option>
+            <option value="B-">B-</option>
+            <option value="AB+">AB+</option>
+            <option value="AB-">AB-</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="regAge">Age</label>
+          <input type="number" id="regAge" placeholder="28" min="1" max="120" required>
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="regEmail">Email Address</label>
+        <input type="email" id="regEmail" autocomplete="username" placeholder="name@example.com" required>
+      </div>
+      <div class="form-group">
+        <label for="regPassword">Password (min 6 chars)</label>
+        <input type="password" id="regPassword" autocomplete="new-password" placeholder="••••••••" minlength="6" required>
+      </div>
+      <div id="regError" style="color: var(--danger); font-size: 12px; margin-bottom: 10px; line-height: 1.4;"></div>
+      <button type="submit" class="btn-primary" id="regSubmitBtn">Create Health Account</button>
+    </form>
+  </div>
+
+  <!-- 2. MAIN APPLICATION (Shown when logged in) -->
+  <div class="app hidden">
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">M</div>
         <div>
-          <div class="who">Ananya Rao</div>
-          <div class="id mono">PT-2024-00187 · O+</div>
+          <div class="brand-name">MedLedger</div>
+          <div class="brand-sub">Health Record System</div>
         </div>
       </div>
-    </div>
 
-    <!-- DASHBOARD -->
-    <section class="section active" id="dashboard">
-      <div class="grid-stats">
-        <div class="stat-card"><div class="stat-num">27</div><div class="stat-label">Records in vault</div></div>
-        <div class="stat-card"><div class="stat-num">5 yrs</div><div class="stat-label">History span</div></div>
-        <div class="stat-card"><div class="stat-num">3</div><div class="stat-label">Tasks due this week</div></div>
-        <div class="stat-card"><div class="stat-num">2</div><div class="stat-label">Doctors with active access</div></div>
+      <nav class="nav">
+        <div class="nav-label">Overview</div>
+        <button class="nav-item active" data-target="dashboard"><span class="ic">◈</span> Dashboard</button>
+
+        <div class="nav-label">Records</div>
+        <button class="nav-item" data-target="vault"><span class="ic">📁</span> Medical Vault</button>
+        <button class="nav-item" data-target="timeline"><span class="ic">🕐</span> Timeline</button>
+        <button class="nav-item" data-target="scanner"><span class="ic">🤖</span> AI Document Scanner</button>
+
+        <div class="nav-label">Care</div>
+        <button class="nav-item" data-target="tracker"><span class="ic">💊</span> Health Tracker</button>
+        <button class="nav-item" data-target="reminders"><span class="ic">🔔</span> Reminders</button>
+
+        <div class="nav-label">Access</div>
+        <button class="nav-item" data-target="sharing"><span class="ic">🔐</span> Doctor Sharing</button>
+        <button class="nav-item" data-target="summary"><span class="ic">📊</span> AI Health Summary</button>
+        <button class="nav-item" data-target="learning"><span class="ic">🎓</span> Learning Hub</button>
+      </nav>
+
+      <div class="sidebar-foot">
+        <div class="demo-flag">⚠ Patient records encrypted &amp; stored safely.</div>
       </div>
+    </aside>
 
-      <div class="panel">
-        <div class="panel-head">
-          <h2>Recent activity</h2>
-          <span class="hint">Last 4 events</span>
+    <!-- MAIN -->
+    <main class="main">
+
+      <div class="topbar">
+        <div>
+          <h1 class="page-title" id="pageTitle">Dashboard</h1>
+          <div class="page-sub" id="pageSub">Your medical history, organized in one place.</div>
         </div>
-        <div class="timeline">
-          <div class="t-item"><div class="t-dot"></div><div class="t-date mono">21 Aug 2026</div>
-            <div class="t-card"><div><div class="t-title">Blood Test — Lipid Profile uploaded</div><div class="t-sub">Apollo Diagnostics</div></div><span class="tag lab">Lab</span></div>
+        <div style="display:flex; align-items:center; gap: 10px;">
+          <div class="patient-chip">
+            <div class="avatar">AR</div>
+            <div>
+              <div class="who">Ananya Rao</div>
+              <div class="id mono">PT-2024-00187 · O+</div>
+            </div>
           </div>
-          <div class="t-item"><div class="t-dot"></div><div class="t-date mono">14 Aug 2026</div>
-            <div class="t-card"><div><div class="t-title">Shared 3 documents with Dr. Mehta</div><div class="t-sub">Access expires in 48 hrs</div></div><span class="tag vac">Shared</span></div>
+          <button id="logoutBtn" class="btn ghost small" type="button">Sign Out</button>
+        </div>
+      </div>
+
+      <!-- DASHBOARD -->
+      <section class="section active" id="dashboard">
+        <div class="grid-stats">
+          <div class="stat-card"><div class="stat-num">27</div><div class="stat-label">Records in vault</div></div>
+          <div class="stat-card"><div class="stat-num">5 yrs</div><div class="stat-label">History span</div></div>
+          <div class="stat-card"><div class="stat-num">3</div><div class="stat-label">Tasks due this week</div></div>
+          <div class="stat-card"><div class="stat-num">2</div><div class="stat-label">Doctors with active access</div></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h2>Recent activity</h2>
+            <span class="hint">Last 4 events</span>
           </div>
-          <div class="t-item"><div class="t-dot"></div><div class="t-date mono">02 Aug 2026</div>
-            <div class="t-card"><div><div class="t-title">Metformin dosage marked complete</div><div class="t-sub">Daily tracker</div></div><span class="tag lab">Tracker</span></div>
+          <div class="timeline" id="recentActivity"></div>
+        </div>
+      </section>
+
+      <!-- VAULT -->
+      <section class="section" id="vault">
+        <div class="panel">
+          <div class="panel-head">
+            <h2>Medical Vault</h2>
+            <button class="btn small">＋ Upload document</button>
           </div>
-          <div class="t-item"><div class="t-dot"></div><div class="t-date mono">27 Jul 2026</div>
-            <div class="t-card"><div><div class="t-title">Chest X-Ray added via AI Scanner</div><div class="t-sub">Fortis Hospital · Verified by you</div></div><span class="tag img">Imaging</span></div>
+          <div class="doc-grid" id="vaultGrid"></div>
+        </div>
+      </section>
+
+      <!-- TIMELINE -->
+      <section class="section" id="timeline">
+        <div class="panel">
+          <div class="panel-head">
+            <h2>Medical Timeline</h2>
+            <span class="hint">Sorted oldest → newest</span>
           </div>
+          <div class="timeline" id="timelineFull"></div>
         </div>
-      </div>
-    </section>
+      </section>
 
-    <!-- VAULT -->
-    <section class="section" id="vault">
-      <div class="panel">
-        <div class="panel-head">
-          <h2>Medical Vault</h2>
-          <button class="btn small">＋ Upload document</button>
-        </div>
-        <div class="doc-grid" id="vaultGrid"></div>
-      </div>
-    </section>
-
-    <!-- TIMELINE -->
-    <section class="section" id="timeline">
-      <div class="panel">
-        <div class="panel-head">
-          <h2>Medical Timeline</h2>
-          <span class="hint">Sorted oldest → newest</span>
-        </div>
-        <div class="timeline" id="timelineFull"></div>
-      </div>
-    </section>
-
-    <!-- SCANNER -->
-    <section class="section" id="scanner">
-      <div class="panel">
-        <div class="panel-head">
-          <h2>AI Document Scanner</h2>
-          <span class="hint">Reads prescriptions &amp; reports, including handwriting</span>
-        </div>
-        <div class="scan-zone" id="scanZone">
-          <span class="ic">🤖</span>
-          <div><strong>Drop a prescription or report here</strong> — or click to simulate a scan</div>
-        </div>
-        <div class="extract-box" id="extractBox">
-          <div class="extract-row"><span class="k">Document type</span><span>Handwritten prescription</span></div>
-          <div class="extract-row"><span class="k">Doctor</span><span>Dr. S. Kulkarni, MD</span></div>
-          <div class="extract-row"><span class="k">Date</span><span class="mono">18 Aug 2026</span></div>
-          <div class="extract-row"><span class="k">Medicines detected</span><span>Azithromycin 500mg, Cetirizine 10mg</span></div>
-          <div class="extract-row"><span class="k">Instructions</span><span>Once daily, after food — 5 days</span></div>
-          <div class="verify-note">⚠ AI-read text can contain errors. Please check each field before saving to your vault.</div>
-          <div style="margin-top:14px; display:flex; gap:10px;">
-            <button class="btn">Verify &amp; Save to Vault</button>
-            <button class="btn ghost" onclick="resetScanner()">Discard</button>
+      <!-- SCANNER -->
+      <section class="section" id="scanner">
+        <div class="panel">
+          <div class="panel-head">
+            <h2>AI Document Scanner</h2>
+            <span class="hint">Reads prescriptions &amp; reports, including handwriting</span>
           </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- TRACKER -->
-    <section class="section" id="tracker">
-      <div class="panel">
-        <div class="panel-head">
-          <h2>Daily Health Tracker</h2>
-          <span class="hint">Tap to mark complete</span>
-        </div>
-        <div class="track-list" id="trackList"></div>
-      </div>
-    </section>
-
-    <!-- REMINDERS -->
-    <section class="section" id="reminders">
-      <div class="panel">
-        <div class="panel-head">
-          <h2>Reminders</h2>
-          <span class="hint">Pending items only</span>
-        </div>
-        <div id="remList"></div>
-      </div>
-    </section>
-
-    <!-- SHARING -->
-    <section class="section" id="sharing">
-      <div class="panel">
-        <div class="panel-head">
-          <h2>Privacy &amp; Doctor Sharing</h2>
-          <span class="hint">Choose exactly what a doctor can see</span>
-        </div>
-        <div id="shareList"></div>
-        <button class="btn" style="margin-top:16px;" onclick="generateCode()">Generate share code / QR</button>
-        <div class="code-box" id="codeBox">
-          <div class="qr" id="qrGrid"></div>
-          <div>
-            <div class="code-exp">One-time access code</div>
-            <div class="code-text mono" id="codeText">— — — — — —</div>
-            <div class="code-exp">Expires in 30 minutes · 2 documents selected</div>
+          <div class="scan-zone" id="scanZone">
+            <span class="ic">🤖</span>
+            <div><strong>Drop a prescription or report here</strong> — or click to simulate a scan</div>
+          </div>
+          <div class="extract-box" id="extractBox">
+            <div class="extract-row"><span class="k">Document type</span><span>Handwritten prescription</span></div>
+            <div class="extract-row"><span class="k">Doctor</span><span>Dr. S. Kulkarni, MD</span></div>
+            <div class="extract-row"><span class="k">Date</span><span class="mono">18 Aug 2026</span></div>
+            <div class="extract-row"><span class="k">Medicines detected</span><span>Azithromycin 500mg, Cetirizine 10mg</span></div>
+            <div class="extract-row"><span class="k">Instructions</span><span>Once daily, after food — 5 days</span></div>
+            <div class="verify-note">⚠ AI-read text can contain errors. Please check each field before saving to your vault.</div>
+            <div style="margin-top:14px; display:flex; gap:10px;">
+              <button class="btn">Verify &amp; Save to Vault</button>
+              <button class="btn ghost" id="resetScannerBtn">Discard</button>
+            </div>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
 
-    <!-- SUMMARY -->
-    <section class="section" id="summary">
-      <div class="panel">
-        <div class="panel-head">
-          <h2>AI Health Summary</h2>
-          <span class="hint">Generated from records in your vault</span>
+      <!-- TRACKER -->
+      <section class="section" id="tracker">
+        <div class="panel">
+          <div class="panel-head">
+            <h2>Daily Health Tracker</h2>
+            <span class="hint">Tap to mark complete</span>
+          </div>
+          <div class="track-list" id="trackList"></div>
         </div>
-        <div class="summary-text">
-          Ananya's records show a history of managed Type 2 diabetes since 2022, with regular HbA1c checks
-          trending within target range over the last three tests. Recent lab work (Aug 2026) shows lipid
-          levels slightly above the reference range. Vaccination records are up to date. No hospitalizations
-          have been recorded in the last 18 months, and the most recent imaging (chest X-ray, Jul 2026)
-          was reported as unremarkable.
+      </section>
+
+      <!-- REMINDERS -->
+      <section class="section" id="reminders">
+        <div class="panel">
+          <div class="panel-head">
+            <h2>Reminders</h2>
+            <span class="hint">Pending items only</span>
+          </div>
+          <div id="remList"></div>
         </div>
-        <div class="disclaimer">This is a plain-language summary of what's on file — not a diagnosis or medical opinion. Always confirm with your doctor.</div>
-      </div>
-    </section>
+      </section>
 
-    <!-- LEARNING HUB -->
-    <section class="section" id="learning">
-      <div class="panel">
-        <div class="panel-head">
-          <h2>Medical Learning Hub</h2>
-          <span class="hint">Shared only with explicit patient consent</span>
+      <!-- SHARING -->
+      <section class="section" id="sharing">
+        <div class="panel">
+          <div class="panel-head">
+            <h2>Privacy &amp; Doctor Sharing</h2>
+            <span class="hint">Choose exactly what a doctor can see</span>
+          </div>
+          <div id="shareList"></div>
+          <button class="btn" style="margin-top:16px;" id="generateCodeBtn">Generate share code / QR</button>
+          <div class="code-box" id="codeBox">
+            <div class="qr" id="qrGrid"></div>
+            <div>
+              <div class="code-exp">One-time access code</div>
+              <div class="code-text mono" id="codeText">— — — — — —</div>
+              <div class="code-exp">Expires in 30 minutes · 2 documents selected</div>
+            </div>
+          </div>
         </div>
-        <div class="case-grid" id="caseGrid"></div>
-      </div>
-    </section>
+      </section>
 
-  </main>
-</div>
+      <!-- SUMMARY -->
+      <section class="section" id="summary">
+        <div class="panel">
+          <div class="panel-head">
+            <h2>AI Health Summary</h2>
+            <span class="hint">Generated from records in your vault</span>
+          </div>
+          <div class="summary-text" id="summaryText">
+            Ananya's records show a history of managed Type 2 diabetes since 2022, with regular HbA1c checks
+            trending within target range over the last three tests.
+          </div>
+          <div class="disclaimer">This is a plain-language summary of what's on file — not a diagnosis or medical opinion. Always confirm with your doctor.</div>
+        </div>
+      </section>
 
-<script src="app.js"></script>
+      <!-- LEARNING HUB -->
+      <section class="section" id="learning">
+        <div class="panel">
+          <div class="panel-head">
+            <h2>Medical Learning Hub</h2>
+            <span class="hint">Shared only with explicit patient consent</span>
+          </div>
+          <div class="case-grid" id="caseGrid"></div>
+        </div>
+      </section>
 
+    </main>
+  </div>
+
+  <script type="module" src="app.js"></script>
 </body>
 </html>
